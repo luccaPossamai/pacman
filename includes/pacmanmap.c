@@ -58,7 +58,7 @@ void deleteMap(Map *map){
 	}
 	free(map -> neighbourMatrix);
 	free(map -> pos);
-	free(map);
+	map = NULL;
 }
 
 void populateInitialPositions(Map* map){
@@ -87,8 +87,7 @@ void populateInitialPositions(Map* map){
 	}
 }
 int moveTo(Map* map, int from, int to){
-	printw("\n%d %d\n", from, to);
-	refresh();
+	if(map -> pos[to] == WALL) return from;
 	map -> pos[to] = map -> pos[from];
 	map -> pos[from] = EMPTY;
 	return to;

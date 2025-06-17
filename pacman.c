@@ -36,7 +36,7 @@ int main() {
 			// tive que fazer essa gambiarra aqui
 			printMap(&map, mapString);
 			printw("%s", mapString);
-			printw("\n%d %d %d %ds", playerPos, lastDirection, keyPressed, (int)((tTime - tTime0)/1e3));
+			printw("\n%d %d %d %ds", playerPos, lastDirection, keyPressed, (int)((float)(tTime - tTime0)/1000));
 			// printa algumas informações
 			refresh();
     	}
@@ -44,7 +44,7 @@ int main() {
     free(mapString);
     
     endwin(); 
-    //deleteMap(&map)
+    deleteMap(&map);
 	return 0;
 }
 
