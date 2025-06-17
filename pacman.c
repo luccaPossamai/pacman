@@ -32,11 +32,13 @@ int main() {
 	 		if(lastDirection >= 0){
 	 			playerPos = moveIndex(&map, playerPos, lastDirection);//move o jogador e atualiza a posição
 	 		}
+	 		printw(" Pressione 'esc' para sair\n");
 			// ncurses nao deixa printar com printf
 			// tive que fazer essa gambiarra aqui
 			printMap(&map, mapString);
 			printw("%s", mapString);
-			printw("\n%d %d %d %ds", playerPos, lastDirection, keyPressed, (int)((float)(tTime - tTime0)/1000));
+			
+			printw("\n%d %d %d %ds", playerPos, lastDirection, keyPressed, (int)((tTime - tTime0)));
 			// printa algumas informações
 			refresh();
     	}
