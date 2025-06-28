@@ -16,6 +16,25 @@ const char SCORE   = '.';
 const char POWERUP = 'O';
 const char EMPTY   = ' ';
 
+
+
+typedef struct {
+    int pontos;
+} Score;
+
+void initScore(Score* s) {
+    s->pontos = 0;
+}
+
+void addPoints(Score* s, int valor) {
+    s->pontos += valor;
+}
+
+int getPoints(Score* s) {
+    return s->pontos;
+}
+
+
 typedef struct Map {
 	int LSIZE;
 	int NSIZE;
@@ -24,7 +43,7 @@ typedef struct Map {
 } Map;
 
 void createMap(Map*, int length);
-int moveIndex(Map*, int, int);
+int moveIndex(Map*, int, int, Score* score);
 void deleteMap(Map*);
 void printMap(Map*, char*);
 
@@ -86,14 +105,18 @@ void populateInitialPositions(Map* map){
 		map->pos[i] = str[i];
 	}
 }
-int moveTo(Map* map, int from, int to){
+int moveTo(Map* map, int from, int to, Score* score){
 	if(map -> pos[to] == WALL) return from;
+
+	 if (map->pos[to] == SCORE && score != NULL) {
+        addPoints(score, 10); // soma 10 pontos ao comer '.'
+    }
 	map -> pos[to] = map -> pos[from];
 	map -> pos[from] = EMPTY;
 	return to;
 }
-int moveIndex(Map* map, int index, int direction){
-	return moveTo(map, index, map -> neighbourMatrix[index][direction]);
+int moveIndex(Map* map, int index, int direction, Score* score){
+	return moveTo(map, index, map -> neighbourMatrix[index][direction], score);
 }
 void printMap(Map* map, char* str){
 	char temp[200];str[0] = '\0';
