@@ -29,7 +29,6 @@ void initScore(Score* s) {
 void addPoints(Score* s, int valor) {
     s->pontos += valor;
 }
-
 int getPoints(Score* s) {
     return s->pontos;
 }

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MENU_ITENS 2
+#define MENU_ITENS 3
 
 typedef void (*AcaoMenu)(void);
 
@@ -14,17 +14,20 @@ long get_time_ms(void);
 void initiateKeyHandler(void);
 
 void iniciar_jogo_acao(void); //prototipos do menu
+void carregar_jogo_acao(void);
 void sair_acao(void);
 void menu_loop(void);
-
-
-
+void loadLastSave(void);
+void saveLastLoad(void);
 
 int lastDirection = -1; //direção do jogador
-int keyPressed, pause = 0;
+int keyPressed, pause = 0, carregarJogo = 0;
 int playerPos = 21; //acabei deixando começar em nesse quadrado
 Map map;
-
+FILE* load = NULL;
+Score score;
+char startString[128] = "Iniciar Novo Jogo";
+char loadString[128] = "Carregar jogo";
 
 typedef struct {
     char *texto;
@@ -35,6 +38,20 @@ typedef struct {
 
 void iniciar_jogo_acao(void) {
     pause = 0; // sair do menu e iniciar jogo
+    strcpy(startString, "Iniciar Novo Jogo (Iniciando...)");
+
+}
+
+void carregar_jogo_acao(void){
+  load = fopen("save.dat", "r");
+  if(load != NULL){
+
+    carregarJogo = 1;
+    pause = 0;
+  } else {
+    strcpy(loadString, "Carregar jogo (nenhum jogo salvo)");
+  }
+
 }
 
 void sair_acao(void) {
@@ -46,7 +63,8 @@ void sair_acao(void) {
 void menu_loop(void) {
 	nodelay(stdscr, FALSE);
     MenuItem menu[MENU_ITENS] = {
-        {"Iniciar Novo Jogo", iniciar_jogo_acao},
+        {startString, iniciar_jogo_acao},
+        {loadString, carregar_jogo_acao},
         {"Sair", sair_acao}
     };
     int selecionado = 0;
@@ -87,28 +105,32 @@ void menu_loop(void) {
 
 int main() {
 	initiateKeyHandler();
-
-	Score score;
 	initScore(&score);
+  	while (1) {
+    pause = 1;       // pausa ativa ,"no menu"
+    menu_loop();     // exibe menu até o usuário escolher iniciar ou sair
 
-	 while (1) {
-        pause = 1;       // pausa ativa ,"no menu"
-        menu_loop();     // exibe menu até o usuário escolher iniciar ou sair
-
-        if (pause == -1) { // usuário escolheu sair do menu
-            break;        
-        }
-
+    if (pause == -1) { // usuário escolheu sair do menu
+      break;        
+    }
+  
 	//pause ==0 inicia o jogo
-	createMap(&map, 20);
+    if (map.pos != NULL) {
+      deleteMap(&map);  // libere antes de recriar
+    }
+    createMap(&map, 20);
+    if(carregarJogo) {
+      loadLastSave();
+    }
     char *mapString = malloc(1e3 * sizeof(char));
     long tTime0 = get_time_ms();
     long tTime = tTime0;
     
-	printMap(&map, mapString);
+	  printMap(&map, mapString);
     while(!pause){
     	tTime = get_time_ms();
     	readKeys();
+      if(pause) continue;
     	long delta = tTime - tTime0;
 		if (delta >= 200) { // a cada 200ms o mapa atualiza, jogador se move, fantasmas se movem etc
 			tTime0 = tTime;
@@ -116,23 +138,23 @@ int main() {
 	 		if(lastDirection >= 0){
 	 			playerPos = moveIndex(&map, playerPos, lastDirection, &score);//move o jogador e atualiza a posição
 	 		}
-	 		printw(" Pressione 'esc' para voltar ao menu\n");
+	 		printw(" Pressione 'esc' para salvar e voltar ao menu\n");
 			// ncurses nao deixa printar com printf
 			// tive que fazer essa gambiarra aqui
 			printMap(&map, mapString);
 			printw("%s", mapString);
 
 			printw("Score: %d\n", getPoints(&score)); //printa o score atual na tela, vindo da TAD  Score implementada em pacmanmap.c
-
-			
-			printw("\n%d %d %d %ds", playerPos, lastDirection, keyPressed, (int)((tTime - tTime0)));
 			// printa algumas informações
 			refresh();
     	}
     }
+    saveLastLoad();
+    strcpy(loadString, "Carregar jogo");
+    strcpy(startString, "Iniciar Novo Jogo");
 
     free(mapString);
-	deleteMap(&map);
+	  deleteMap(&map);
 }   
     endwin(); 
 	return 0;
@@ -160,8 +182,8 @@ void readKeys(){
 	keyPressed = getch();
 	switch(keyPressed){
 		case(27): //esc
-			pause = 1;
-			break;
+      pause = 1;
+      break;
 		case(KEY_UP):
 			lastDirection = UP;
 			break;
@@ -187,3 +209,39 @@ void* safeMAlloc(unsigned int size) {
   }
   return ptr;
 }
+
+void loadLastSave(){
+  FILE *load = fopen("save.dat", "r");
+  char linha[1048];
+
+  if (fgets(linha, sizeof(linha), load) != NULL) {
+        score.pontos = atoi(linha);  // ou sscanf(linha, "%d", &score.pontos);
+  }
+
+  if (fgets(linha, sizeof(linha), load) != NULL) {
+        playerPos = atoi(linha);  // ou sscanf(linha, "%d", &score.pontos);
+  }
+
+  
+  
+  if (fgets(linha, sizeof(linha), load) != NULL) {
+    for (int i = 0; i < map.NSIZE; i++) {
+      map.pos[i] = linha[i];
+    }
+  }
+
+  fclose(load);
+
+}
+void saveLastLoad(void){
+    FILE *load = fopen("save.dat", "w");
+    if (load == NULL) return;
+
+
+    fprintf(load, "%d\n", score.pontos);
+    fprintf(load, "%d\n", playerPos);
+    fwrite(map.pos, sizeof(char), map.NSIZE, load);
+
+    fclose(load);
+}
+
