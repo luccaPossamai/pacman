@@ -19,6 +19,8 @@ void sair_acao(void);
 void menu_loop(void);
 void loadLastSave(void);
 void saveLastLoad(void);
+void tela_vitoria(void);
+int pilulas_coletadas(Map *map);
 
 int lastDirection = -1; //direção do jogador
 int keyPressed, pause = 0, carregarJogo = 0;
@@ -72,7 +74,7 @@ void menu_loop(void) {
     int ch;
     while (pause || selecionado == 0) {
         clear();
-        mvprintw(2, 10, "=== GRUPO  - MENU INICIAL ==="); //func da ncurses para printar texto em local especifico da tela
+        mvprintw(2, 10, "=== PACMAN  - MENU INICIAL ==="); //func da ncurses para printar texto em local especifico da tela
         for (int i = 0; i < MENU_ITENS; i++) {
             if (i == selecionado)
                 attron(A_REVERSE); //da enfoque no texto, o A_REVERSE inverte as cores do texto com o fundo
@@ -137,6 +139,11 @@ int main() {
 	 		clear();
 	 		if(lastDirection >= 0){
 	 			playerPos = moveIndex(&map, playerPos, lastDirection, &score);//move o jogador e atualiza a posição
+        if (pilulas_coletadas(&map)) {
+            tela_vitoria();
+            break;
+        }
+
 	 		}
 	 		printw(" Pressione 'esc' para salvar e voltar ao menu\n");
 			// ncurses nao deixa printar com printf
@@ -176,6 +183,36 @@ void initiateKeyHandler(){
     keypad(stdscr, TRUE); //necessario para ler as setas
     
 }
+int pilulas_coletadas(Map *map) {
+    for (int i = 0; i < map->NSIZE; i++) {
+        if (map->pos[i] == SCORE) {
+            return 0;  // Ainda há pílulas
+        }
+    }
+    return 1;  // Todas foram coletadas
+}
+void tela_vitoria() {
+    clear();
+    mvprintw(5, 10, " VC VENCEU!!! ");
+    mvprintw(7, 10, "Score Final: %d", getPoints(&score));
+    mvprintw(9, 10, "1 - Voltar ao Menu");
+    mvprintw(10, 10, "2 - Sair");
+    refresh();
+
+    int ch;
+    while (1) {
+        ch = getch();
+        if (ch == '1') {
+            pause = 1;
+            break;
+        } else if (ch == '2') {
+            pause = -1;
+            break;
+        }
+    }
+}
+
+
 
 // leitura das teclas de entrada
 void readKeys(){
